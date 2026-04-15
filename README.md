@@ -1,0 +1,112 @@
+# UCB Energy Project: Long-Term Oil Forecast Evaluation
+
+This repository turns the course proposal into a reproducible analysis pipeline focused on long-term oil price forecast evaluation.
+
+The project now does four things end to end:
+
+1. Downloads and standardizes official EIA Annual Energy Outlook Brent price vintages from AEO Table 12.
+2. Builds realized annual Brent prices from FRED and converts both forecasts and realizations into real 2025 dollars using CPI.
+3. Evaluates 3-year-ahead and 5-year-ahead forecast performance with bias and accuracy metrics, and compares EIA against a random-walk benchmark.
+4. Runs rolling improvement models:
+   - Rolling AR
+   - Rolling AR + market information proxy from Brent front-month futures
+
+Supplementary World Bank commodity forecast archives are also downloaded because they offer an additional public oil-price forecast history, although their forecast object is `Crude oil, avg` rather than exact Brent.
+
+## Project structure
+
+```text
+src/oil_forecast_project/
+  data_sources/
+    eia.py
+    fred.py
+    market.py
+    world_bank.py
+  analysis/
+    metrics.py
+    models.py
+    plots.py
+  datasets.py
+  pipeline.py
+scripts/
+  run_pipeline.py
+data/
+  raw/
+  processed/
+outputs/
+```
+
+## Data sources
+
+- EIA AEO Table 12 archive and current release:
+  `https://www.eia.gov/outlooks/aeo/tables_ref.php`
+  `https://www.eia.gov/outlooks/archive/`
+- FRED Brent spot series `DCOILBRENTEU`
+- FRED CPI series `CPIAUCSL`
+- Yahoo Finance Brent front-month futures ticker `BZ=F`
+- World Bank commodity price forecast archive:
+  `https://www.worldbank.org/en/research/commodity-markets/price-forecasts`
+
+## Methodology
+
+### Main forecast evaluation
+
+- Forecast object: EIA Brent Spot from AEO Table 12.
+- Unit standardization: all EIA vintages are converted from their original constant-dollar base year into real 2025 dollars using annual CPI averages.
+- Realized target: annual average Brent spot price from FRED, also converted to real 2025 dollars.
+- Forecast horizons: 3 years ahead and 5 years ahead.
+- Metrics:
+  - Mean Error (ME)
+  - Mean Absolute Error (MAE)
+  - Root Mean Squared Error (RMSE)
+  - Mean Absolute Percentage Error (MAPE)
+- Benchmark: random walk forecast equal to the most recently completed annual Brent average available at the time of release.
+
+### Rolling improvement models
+
+- Rolling AR uses lagged annual real Brent prices.
+- Rolling AR + Futures adds a market-information proxy using Brent front-month futures around the publication month.
+- Both models are estimated in expanding-window fashion and evaluated out of sample.
+
+## How to run
+
+```bash
+python3 -m pip install -e .
+python3 scripts/run_pipeline.py
+```
+
+## Main outputs
+
+- Processed datasets:
+  - `data/processed/eia_brent_forecasts.csv`
+  - `data/processed/benchmark_metrics.csv`
+  - `data/processed/rolling_model_metrics.csv`
+  - `data/processed/rolling_model_predictions.csv`
+- Figures:
+  - `outputs/eia_vintages_vs_actual.png`
+  - `outputs/benchmark_metrics.png`
+  - `outputs/rolling_model_rmse.png`
+- Workbook:
+  - `outputs/analysis_outputs.xlsx`
+- Short written summary:
+  - `outputs/project_summary.md`
+
+## Current findings
+
+From the latest pipeline run in this repo:
+
+- EIA beats the random-walk benchmark on both 3-year and 5-year RMSE.
+- EIA forecasts still show strong positive mean error in the evaluated sample, consistent with optimistic bias.
+- The rolling AR baselines are available as a direct comparison, but in this first implementation they do not beat EIA on RMSE.
+- The futures-augmented model is included as the proposal's market-information extension, but the result should be interpreted cautiously because the public futures proxy is front-month `BZ=F`, not a full long-dated Brent strip.
+
+## Important limitations
+
+- AEO 2024 was not released, so there is no 2024 EIA vintage in the archive.
+- The World Bank supplementary archive uses `Crude oil, avg`, not exact Brent, so it is not merged into the core Brent benchmark table.
+- IEA historical forecasts were investigated but are not integrated in this version because the needed vintage-level long-horizon Brent series were not available in a clean public machine-readable archive within the project time window.
+- The futures enhancement uses a public market proxy rather than a full historical long-dated Brent curve.
+
+## Legacy file
+
+The original exploratory script `energy_project_notebook_converted.py` is kept in the repository for reference, but it is superseded by the structured pipeline in `src/oil_forecast_project/`.

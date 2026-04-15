@@ -1,0 +1,23 @@
+import pandas as pd
+
+from oil_forecast_project.analysis.metrics import summarize_errors
+
+
+def test_summarize_errors_returns_expected_columns():
+    frame = pd.DataFrame(
+        {
+            "horizon_years": [3, 3, 5, 5],
+            "actual_real_2025_usd_per_bbl": [10.0, 20.0, 30.0, 40.0],
+            "forecast_real_2025_usd_per_bbl": [12.0, 18.0, 35.0, 39.0],
+            "forecast_error": [2.0, -2.0, 5.0, -1.0],
+        }
+    )
+    out = summarize_errors(
+        frame,
+        provider_label="TestModel",
+        forecast_col="forecast_real_2025_usd_per_bbl",
+        error_col="forecast_error",
+    )
+
+    assert list(out.columns) == ["model", "horizon_years", "n_forecasts", "ME", "MAE", "RMSE", "MAPE"]
+    assert set(out["horizon_years"]) == {3, 5}
