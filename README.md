@@ -1,4 +1,4 @@
-# UCB Energy Project: Long-Term Oil Forecast Evaluation
+# 290 Energy Project: Long-Term Oil Forecast Evaluation
 
 This repository turns the course proposal into a reproducible analysis pipeline focused on long-term oil price forecast evaluation.
 
