@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from oil_forecast_project.analysis.metrics import summarize_errors
 
@@ -21,3 +22,11 @@ def test_summarize_errors_returns_expected_columns():
 
     assert list(out.columns) == ["model", "horizon_years", "n_forecasts", "ME", "MAE", "RMSE", "MAPE"]
     assert set(out["horizon_years"]) == {3, 5}
+
+    horizon_3 = out.loc[out["horizon_years"] == 3].iloc[0]
+    assert horizon_3["model"] == "TestModel"
+    assert horizon_3["n_forecasts"] == 2
+    assert horizon_3["ME"] == pytest.approx(0.0)
+    assert horizon_3["MAE"] == pytest.approx(2.0)
+    assert horizon_3["RMSE"] == pytest.approx(2.0)
+    assert horizon_3["MAPE"] == pytest.approx(0.15)
